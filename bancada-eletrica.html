@@ -1,0 +1,817 @@
+<title>Bancada Elétrica</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: cabeçalho com faixa de cabos (PE verde-amarelo, neutro azul), abas fixas, um painel por etapa do projeto. */
+:root{
+  --bg:#EBEEF1; --panel:#FFFFFF; --ink:#15212B; --muted:#586775; --line:#D2D9DF; --soft:#E4E9ED;
+  --accent:#F2B01E; --accent-ink:#1B1500; --blue:#1F5FA8; --pe-g:#2E9E57;
+  --ok:#17794A; --warn:#9A5800; --bad:#BE3128; --ok-bg:#DDF1E6; --warn-bg:#FBEBCB; --bad-bg:#F8DCD9;
+  --f-disp:'Barlow Condensed','Arial Narrow',sans-serif;
+  --f-body:'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --f-mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0F161C; --panel:#17212A; --ink:#E7EDF2; --muted:#93A3B1; --line:#2A3844; --soft:#1F2B35;
+    --accent:#F5B83A; --accent-ink:#1B1500; --blue:#6AA8F0; --pe-g:#4CC38A;
+    --ok:#4CC38A; --warn:#F0A64A; --bad:#FF7A6E; --ok-bg:#16322A; --warn-bg:#3A2D14; --bad-bg:#40201C;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0F161C; --panel:#17212A; --ink:#E7EDF2; --muted:#93A3B1; --line:#2A3844; --soft:#1F2B35;
+  --accent:#F5B83A; --accent-ink:#1B1500; --blue:#6AA8F0; --pe-g:#4CC38A;
+  --ok:#4CC38A; --warn:#F0A64A; --bad:#FF7A6E; --ok-bg:#16322A; --warn-bg:#3A2D14; --bad-bg:#40201C;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.45;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 48px}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--bg)}
+.wrap{max-width:1000px;margin:0 auto}
+h1,h2,h3{font-family:var(--f-disp);font-weight:700;letter-spacing:.01em;margin:0;text-wrap:balance}
+h2{font-size:26px;line-height:1.1}
+h3{font-size:19px;line-height:1.15}
+p{margin:0}
+.top{padding-top:18px}
+.brand{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.brand h1{font-size:34px;line-height:1}
+.stripe{display:inline-flex;gap:3px;height:30px}
+.stripe i{display:block;width:7px;border-radius:1px}
+.stripe i:nth-child(1){background:linear-gradient(180deg,var(--pe-g) 0 50%,var(--accent) 50% 100%)}
+.stripe i:nth-child(2){background:var(--blue)}
+.stripe i:nth-child(3){background:var(--ink)}
+.badge{margin-left:auto;font:500 12px var(--f-mono);color:var(--muted);border:1px solid var(--line);padding:3px 8px;border-radius:3px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);margin-top:14px}
+.kpi{background:var(--panel);padding:9px 12px;min-width:0}
+.kpi span{display:block;font:600 12px var(--f-disp);letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.kpi b{display:block;font:500 20px var(--f-mono);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kpi small{font:400 12px var(--f-mono);color:var(--muted)}
+.tabs{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--bg);display:flex;gap:2px;overflow-x:auto;margin-top:14px;border-bottom:2px solid var(--line);scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tabs button{flex:none;appearance:none;border:0;background:none;color:var(--muted);font:600 17px var(--f-disp);letter-spacing:.06em;text-transform:uppercase;padding:11px 14px 9px;cursor:pointer;border-bottom:4px solid transparent;margin-bottom:-2px}
+.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.tabs button:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--blue);outline-offset:1px}
+.panel{display:flex;flex-direction:column;gap:16px;padding-top:18px}
+.lead{color:var(--muted);max-width:68ch}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:14px;min-width:0}
+.card>h3{margin-bottom:10px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.grid .wide{grid-column:1/-1}
+label{display:flex;flex-direction:column;gap:3px;min-width:0;font:600 12px var(--f-disp);letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+input,select,textarea{font:400 16px var(--f-body);color:var(--ink);background:var(--soft);border:1px solid var(--line);border-radius:4px;padding:8px 9px;min-width:0;width:100%;text-transform:none;letter-spacing:0}
+input[type=number]{font-family:var(--f-mono)}
+input[type=checkbox]{width:20px;height:20px;accent-color:var(--blue)}
+.ck{flex-direction:row;align-items:center;gap:8px;text-transform:none;letter-spacing:0;font:400 14px var(--f-body);color:var(--ink)}
+textarea{min-height:90px;font:400 13px var(--f-mono)}
+.btns{display:flex;flex-wrap:wrap;gap:8px}
+button.b{appearance:none;font:600 16px var(--f-disp);letter-spacing:.06em;text-transform:uppercase;border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:9px 14px;border-radius:4px;cursor:pointer}
+button.b.p{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+button.b.x{padding:6px 10px;color:var(--bad)}
+button.b:hover{filter:brightness(.97)}
+.row-h{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.row-h input{font-weight:600}
+.tag{flex:none;font:500 13px var(--f-mono);background:var(--ink);color:var(--bg);padding:3px 7px;border-radius:3px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.chip{display:inline-flex;gap:6px;align-items:baseline;border:1px solid var(--line);border-radius:3px;padding:3px 8px;background:var(--soft);font:500 14px var(--f-mono);font-variant-numeric:tabular-nums}
+.chip i{font:600 11px var(--f-disp);font-style:normal;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.pill{display:inline-block;font:600 13px var(--f-disp);letter-spacing:.07em;text-transform:uppercase;padding:3px 9px;border-radius:3px}
+.pill.ok{background:var(--ok-bg);color:var(--ok)}
+.pill.warn{background:var(--warn-bg);color:var(--warn)}
+.pill.bad{background:var(--bad-bg);color:var(--bad)}
+.note{font-size:13px;color:var(--muted);margin-top:8px}
+.msg{font-size:13px;margin-top:8px}
+.msg.bad{color:var(--bad)}.msg.warn{color:var(--warn)}
+.scroll{overflow-x:auto;max-width:100%}
+table{border-collapse:collapse;width:100%;font:400 13px var(--f-mono);font-variant-numeric:tabular-nums}
+th{font:600 12px var(--f-disp);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);text-align:left;padding:6px 8px;border-bottom:2px solid var(--line);white-space:nowrap}
+td{padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+td.l,th.l{white-space:normal;min-width:150px}
+td.n,th.n{text-align:right}
+tfoot td{font-weight:500;border-bottom:0;border-top:2px solid var(--line)}
+.phases{display:grid;gap:8px;margin-top:6px}
+.ph{display:grid;grid-template-columns:28px 1fr 96px;gap:10px;align-items:center;font:500 13px var(--f-mono)}
+.ph .bar{height:12px;background:var(--soft);border-radius:2px;overflow:hidden}
+.ph .bar span{display:block;height:100%;background:var(--blue)}
+.orc-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;padding:10px 0;border-bottom:1px solid var(--line)}
+.orc-row .d{grid-column:1/-1;display:flex;gap:8px;align-items:center}
+.orc-row .t{font:500 15px var(--f-mono);align-self:end;padding-bottom:8px;text-align:right}
+.orc-row label{font-size:11px}
+.sum{display:grid;grid-template-columns:1fr auto;gap:4px 16px;font:500 15px var(--f-mono);max-width:420px;margin-left:auto}
+.sum span:nth-child(odd){font-family:var(--f-body);color:var(--muted)}
+.sum span:nth-child(even){text-align:right}
+.sum .tot{font-size:20px;color:var(--ink);font-weight:500;padding-top:6px;border-top:2px solid var(--ink)}
+.memo{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:22px clamp(14px,4vw,34px);max-width:78ch}
+.memo h3{font-size:20px;text-transform:uppercase;letter-spacing:.05em;margin:22px 0 6px;border-bottom:1px solid var(--line);padding-bottom:3px}
+.memo h3:first-child{margin-top:0}
+.memo p{margin:6px 0}
+.memo ul{margin:6px 0;padding-left:20px}
+.memo .kv{display:grid;grid-template-columns:minmax(110px,170px) 1fr;gap:2px 12px;font-size:14px}
+.memo .kv span:nth-child(odd){color:var(--muted)}
+.memo .title{font:700 28px/1.05 var(--f-disp);text-transform:uppercase;letter-spacing:.03em;margin-bottom:4px}
+.chk{display:flex;flex-direction:column;gap:2px}
+.chk .it{display:grid;grid-template-columns:24px 1fr;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);align-items:start}
+.chk .it small{display:block;color:var(--muted);font:400 12px var(--f-mono)}
+.dot{width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font:700 13px var(--f-body);color:#fff;margin-top:1px}
+.dot.ok{background:var(--ok)}.dot.bad{background:var(--bad)}.dot.na{background:var(--muted)}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:9px 16px;border-radius:4px;font-size:14px;z-index:40}
+@media (max-width:560px){ .orc-row{grid-template-columns:repeat(2,minmax(0,1fr))} .brand h1{font-size:30px} }
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <span class="stripe" aria-hidden="true"><i></i><i></i><i></i></span>
+      <h1>Bancada Elétrica</h1>
+      <span class="badge" id="badge">carregando…</span>
+    </div>
+    <div class="kpis" id="kpis"></div>
+  </header>
+
+  <nav class="tabs" id="tabs" role="tablist" aria-label="Etapas do projeto">
+    <button role="tab" data-tab="projeto">Projeto</button>
+    <button role="tab" data-tab="ambientes">Ambientes</button>
+    <button role="tab" data-tab="circuitos">Circuitos</button>
+    <button role="tab" data-tab="luz">Luz</button>
+    <button role="tab" data-tab="terra">Terra</button>
+    <button role="tab" data-tab="orcamento">Orçamento</button>
+    <button role="tab" data-tab="memorial">Memorial</button>
+    <button role="tab" data-tab="normas">Normas</button>
+  </nav>
+
+  <!-- PROJETO -->
+  <section class="panel" id="p-projeto" hidden>
+    <p class="lead" id="exemplo-aviso"></p>
+    <div class="card"><h3>Obra e responsável técnico</h3><div class="grid" id="f-obra"></div></div>
+    <div class="card"><h3>Sistema elétrico</h3><div class="grid" id="f-sistema"></div>
+      <p class="note">Fator de demanda: use o valor da tabela da sua concessionária. Seção mínima do alimentador adotada: 6 mm² (confirme no padrão de entrada local).</p></div>
+    <div class="card"><h3>Dados deste projeto</h3>
+      <div class="btns">
+        <button class="b" data-act="exemplo">Carregar exemplo</button>
+        <button class="b" data-act="novo">Projeto em branco</button>
+        <button class="b" data-act="backup" id="b-backup">Salvar backup (.json)</button>
+        <button class="b" data-act="copiar-backup">Copiar backup</button>
+      </div>
+      <label style="margin-top:12px">Restaurar backup (cole o texto aqui)<textarea id="restore" placeholder='{"p":{…}}'></textarea></label>
+      <div class="btns" style="margin-top:8px"><button class="b" data-act="restaurar">Restaurar</button></div>
+      <p class="note" id="save-note"></p>
+    </div>
+  </section>
+
+  <!-- AMBIENTES -->
+  <section class="panel" id="p-ambientes" hidden>
+    <h2>Levantamento de cargas por ambiente</h2>
+    <p class="lead">Previsão mínima de pontos e potências conforme NBR 5410 (item 9.5.2): iluminação 100 VA até 6 m² e mais 60 VA a cada 4 m² inteiros adicionais; TUG a cada 5 m de perímetro (3,5 m em cozinha, copa e área de serviço), banheiro com ao menos 1 ponto.</p>
+    <div id="list-amb" class="panel" style="padding:0"></div>
+    <div class="btns"><button class="b" data-act="add-amb">+ Ambiente</button><button class="b p" data-act="gen-circ">Gerar circuitos dos ambientes</button></div>
+    <div class="card"><h3>Totais do levantamento</h3><div id="amb-tot"></div>
+      <p class="note">Gerar circuitos substitui apenas os circuitos criados automaticamente; os que você adicionou ou ajustou como manuais ficam.</p></div>
+  </section>
+
+  <!-- CIRCUITOS -->
+  <section class="panel" id="p-circuitos" hidden>
+    <h2>Circuitos e condutores</h2>
+    <p class="lead">Seção pelo critério de capacidade de condução (Tabela 36, PVC 70 °C, cobre) com fatores de temperatura e agrupamento, disjuntor com Ib ≤ In ≤ Iz e verificação de queda de tensão.</p>
+    <div class="card"><h3>Alimentação geral</h3><div id="alim-res"></div></div>
+    <div id="list-circ" class="panel" style="padding:0"></div>
+    <div class="btns">
+      <select id="add-tipo" style="width:auto;min-width:200px" aria-label="Tipo do novo circuito"></select>
+      <button class="b p" data-act="add-circ">+ Circuito</button>
+    </div>
+    <div class="card"><h3>Quadro de cargas</h3><div class="scroll" id="qc"></div>
+      <h3 style="margin-top:16px">Balanceamento de fases</h3><div class="phases" id="phases"></div><p class="note" id="phase-note"></p></div>
+  </section>
+
+  <!-- LUZ -->
+  <section class="panel" id="p-luz" hidden>
+    <h2>Análise luminotécnica</h2>
+    <p class="lead">Método dos lumens: Φ = E · A ÷ (u · fm). O fator de utilização vem de uma tabela típica para luminária LED de sobrepor (refletâncias 70/50/30 %). Informe o valor do fabricante no campo "u" quando tiver.</p>
+    <div id="list-luz" class="panel" style="padding:0"></div>
+    <div class="btns"><button class="b p" data-act="add-luz">+ Ambiente</button></div>
+    <p class="note">Iluminâncias são valores de referência usuais para cada atividade. Confira o valor adotado na NBR ISO/CIE 8995-1 para a aplicação do projeto.</p>
+  </section>
+
+  <!-- TERRA -->
+  <section class="panel" id="p-terra" hidden>
+    <h2>Aterramento e equipotencialização</h2>
+    <div class="card"><h3>Eletrodo de aterramento</h3><div class="grid" id="f-terra"></div><div id="terra-res"></div></div>
+    <div class="card"><h3>Condutores de proteção</h3><div id="pe-res"></div></div>
+  </section>
+
+  <!-- ORÇAMENTO -->
+  <section class="panel" id="p-orcamento" hidden>
+    <h2>Orçamento</h2>
+    <p class="lead">Materiais saem dos circuitos, dos ambientes e do aterramento. Os preços são valores de exemplo: troque pelos da sua cotação.</p>
+    <div class="btns"><button class="b p" data-act="regen-orc">Atualizar materiais pelos circuitos</button>
+      <button class="b" data-act="add-item-m">+ Material</button><button class="b" data-act="add-item-o">+ Mão de obra</button><button class="b" data-act="add-item-t">+ Taxa</button></div>
+    <div class="card"><div id="list-orc"></div></div>
+    <div class="card"><div class="grid" id="f-orc" style="max-width:420px;margin-bottom:14px"></div><div class="sum" id="orc-sum"></div></div>
+  </section>
+
+  <!-- MEMORIAL -->
+  <section class="panel" id="p-memorial" hidden>
+    <h2>Memorial descritivo</h2>
+    <p class="lead">Texto montado a partir dos dados do projeto. Revise cada item antes de assinar e de emitir a TRT.</p>
+    <div class="btns"><button class="b p" data-act="copiar-memorial">Copiar texto</button><button class="b" data-act="salvar-memorial" id="b-memorial">Salvar .txt</button></div>
+    <article class="memo" id="memo"></article>
+  </section>
+
+  <!-- NORMAS -->
+  <section class="panel" id="p-normas" hidden>
+    <h2>Conferência normativa</h2>
+    <p class="lead">Verificações automáticas a partir dos seus circuitos e uma lista de documentos e ensaios para marcar antes de entregar a obra.</p>
+    <div class="card"><h3>Calculado pelo app</h3><div class="chk" id="normas-auto"></div></div>
+    <div class="card"><h3>Para você conferir</h3><div class="chk" id="normas-man"></div>
+      <p class="note">As tabelas e itens citados seguem a NBR 5410:2004 e a NR-10. Confirme numeração e valores na edição vigente antes de assinar. Esta versão cobre métodos de instalação B1 e C, condutores de cobre com isolação PVC 70 °C, e baixa tensão até 1 kV.</p></div>
+  </section>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+//#CALC-START
+const SEC=[1.5,2.5,4,6,10,16,25,35,50,70,95,120,150,185,240];
+const IZ={
+  B1:{2:[17.5,24,32,41,57,76,101,125,151,192,232,269,309,353,415],3:[15.5,21,28,36,50,68,89,111,134,171,207,239,272,310,364]},
+  C:{2:[19.5,27,36,46,63,85,112,138,168,213,258,299,344,392,461],3:[17.5,24,32,41,57,76,96,119,144,184,223,259,299,341,403]}
+};
+const BREAKERS=[6,10,16,20,25,32,40,50,63,70,80,90,100,125,150,175,200,225,250];
+const RHO=0.0225; // ohm.mm2/m, cobre a 70 C, simplificado
+const TIPOS={
+  ilum:{n:'Iluminação',smin:1.5,inmin:10,fp:0.95,dr:false},
+  tug:{n:'TUG (tomadas gerais)',smin:2.5,inmin:10,fp:0.8,dr:true},
+  chuveiro:{n:'Chuveiro / aquecedor',smin:2.5,inmin:10,fp:1,dr:true},
+  ac:{n:'Ar-condicionado',smin:2.5,inmin:10,fp:0.9,dr:true},
+  tue:{n:'TUE (uso específico)',smin:2.5,inmin:10,fp:1,dr:true},
+  motor:{n:'Motor',smin:2.5,inmin:10,fp:0.85,dr:false}
+};
+const AMB={
+  sala:'Sala',dorm:'Dormitório',coz:'Cozinha',copa:'Copa',serv:'Área de serviço',ban:'Banheiro',var:'Varanda',gar:'Garagem',cor:'Corredor / hall',out:'Outro'
+};
+const ATIV=[
+  ['Sala de estar',150],['Dormitório',150],['Cozinha residencial',300],['Banheiro',200],['Área de serviço',200],
+  ['Corredor / circulação',100],['Escada',150],['Garagem',100],['Escritório / sala de trabalho',500],
+  ['Sala de reunião',500],['Recepção',300],['Área de vendas',300],['Depósito / estoque',100],['Outro (informar)',200]
+];
+const UK=[[0.6,0.40],[0.8,0.48],[1,0.54],[1.25,0.60],[1.5,0.65],[2,0.71],[2.5,0.75],[3,0.78],[4,0.82],[5,0.84]];
+function fAgr(met,n){
+  n=Math.max(1,Math.round(n||1));
+  if(met==='C'){return n<=1?1:n===2?.85:n===3?.79:n===4?.75:n===5?.73:n<=8?.72:n<=11?.70:n<=15?.69:.68}
+  return n<=1?1:n===2?.80:n===3?.70:n===4?.65:n===5?.60:n===6?.57:n===7?.54:n===8?.52:n<=11?.50:n<=15?.45:n<=19?.41:.38;
+}
+function fTemp(t){
+  const T=[[10,1.22],[15,1.17],[20,1.12],[25,1.06],[30,1.00],[35,0.94],[40,0.87],[45,0.79],[50,0.71],[55,0.61],[60,0.50]];
+  t=+t||30; if(t<=10)return 1.22; for(const [k,v] of T){ if(t<=k) return v } return 0.50;
+}
+function peSec(s){const p=s<=16?s:s<=35?16:s/2;return SEC.find(x=>x>=p-1e-9)||p}
+function uFromK(K){
+  if(K<=UK[0][0])return UK[0][1]; if(K>=UK[UK.length-1][0])return UK[UK.length-1][1];
+  for(let i=1;i<UK.length;i++){ if(K<=UK[i][0]){const [k0,u0]=UK[i-1],[k1,u1]=UK[i];return u0+(u1-u0)*(K-k0)/(k1-k0)} }
+}
+function sysV(P){return P.sistema==='380/220'?{Vf:220,Vl:380}:{Vf:127,Vl:220}}
+function sizeCable(o){
+  const fa=fAgr(o.met,o.agr), ft=fTemp(o.temp), tab=(IZ[o.met]||IZ.B1)[o.nc];
+  const lim=o.limit==null?Infinity:o.limit;
+  let note='';
+  for(let k=0;k<SEC.length;k++){
+    const s=SEC[k]; if(s<o.smin-1e-9) continue;
+    const Iz=tab[k]*fa*ft;
+    let In=BREAKERS.find(b=>b>=Math.max(o.I,o.inmin||0));
+    let nt='';
+    if(!In||In>Iz){ const alt=BREAKERS.find(b=>b>=o.I); if(alt&&alt<=Iz){In=alt;nt='In abaixo do mínimo usual'} else continue }
+    const dv=(o.lig==='3F'?Math.sqrt(3):2)*RHO*(o.L||0)*o.I/s;
+    const dvp=dv/o.V*100;
+    if(dvp>lim) continue;
+    return {ok:true,s,Iz,In,dvp,I:o.I,fa,ft,note:nt};
+  }
+  return {ok:false,I:o.I,fa,ft,s:null,In:null,Iz:null,dvp:null,note:'Passa de 240 mm² ou excede a queda de tensão: reveja comprimento, carga ou divida o circuito'};
+}
+function calcCirc(c,P){
+  const t=TIPOS[c.tipo]||TIPOS.tug, {Vf,Vl}=sysV(P);
+  const V=c.lig==='FN'?Vf:Vl, S=+c.va||0;
+  const I=c.lig==='3F'?S/(Math.sqrt(3)*V):S/V;
+  const base={I,V,nc:c.lig==='3F'?3:2,L:+c.L||0,met:c.met,agr:+c.agr||1,temp:+P.temp,smin:t.smin,inmin:t.inmin,lig:c.lig};
+  const r=sizeCable({...base,limit:+P.quedaMax});
+  const r0=sizeCable({...base,limit:null});
+  r.byDV=r.ok&&r0.ok&&r.s>r0.s; r.V=V; r.pol=c.lig==='FN'?1:c.lig==='FF'?2:3;
+  r.W=S*(+c.fp||1); r.pe=r.ok?peSec(r.s):null;
+  const f=P.forn;
+  r.err='';
+  if(c.lig==='FF'&&f==='mono') r.err='Ligação fase-fase pede fornecimento bifásico ou trifásico';
+  if(c.lig==='3F'&&f!=='tri') r.err='Circuito trifásico pede fornecimento trifásico';
+  return r;
+}
+function calcAlim(totS,P){
+  const {Vf,Vl}=sysV(P), Sd=totS*(+P.fd||1);
+  const f=P.forn, V=f==='mono'?Vf:Vl;
+  const I=f==='tri'?Sd/(Math.sqrt(3)*Vl):Sd/V;
+  const r=sizeCable({I,V,nc:f==='tri'?3:2,L:+P.lAlim||0,met:P.mAlim,agr:1,temp:+P.temp,smin:6,inmin:0,lig:f==='tri'?'3F':'FF',limit:Math.min(+P.quedaMax,2)});
+  r.Sd=Sd; r.V=V; r.pol=f==='tri'?3:f==='bi'?2:1;
+  r.pe=r.ok?peSec(r.s):null;
+  return r;
+}
+function ambCalc(a){
+  const area=+a.area||0, per=+a.perim||0;
+  const iluVA=area<=6?100:100+60*Math.floor((area-6)/4);
+  let n;
+  if(['coz','copa','serv'].includes(a.tipo)) n=Math.ceil(per/3.5);
+  else if(['ban','var','gar'].includes(a.tipo)) n=1;
+  else n=Math.ceil(per/5);
+  n=Math.max(1,n||1);
+  const esp=['coz','copa','serv','ban'].includes(a.tipo);
+  const tugVA=esp?600*Math.min(n,3)+100*Math.max(n-3,0):100*n;
+  return {iluVA,tugN:n,tugVA};
+}
+const GRP={sala:'Sala e áreas sociais',var:'Sala e áreas sociais',gar:'Sala e áreas sociais',cor:'Sala e áreas sociais',out:'Sala e áreas sociais',
+  dorm:'Dormitórios',coz:'Cozinha e copa',copa:'Cozinha e copa',serv:'Área de serviço',ban:'Banheiros'};
+function luzCalc(z){
+  const A=(+z.comp||0)*(+z.larg||0), h=Math.max(0.5,(+z.pe||0)-(+z.plano||0));
+  const K=A>0?A/(h*((+z.comp||0)+(+z.larg||0))):0;
+  const u=+z.u>0?+z.u:uFromK(K), fm=+z.fm||0.8;
+  const phi=(+z.E||0)*A/(u*fm), lm=+z.lm||1;
+  const N=A>0?Math.max(1,Math.ceil(phi/lm)):0;
+  const Er=A>0?N*lm*u*fm/A:0, P=N*(+z.w||0);
+  return {A,h,K,u,fm,phi,N,Er,P,dens:A>0?P/A:0};
+}
+function terraCalc(T){
+  const rho=+T.rho||0, L=+T.L||2.4, d=(+T.d||15.9)/1000, n=Math.max(1,Math.round(+T.n||1));
+  const R1=rho/(2*Math.PI*L)*Math.log(4*L/d);
+  const eta=n===1?1:n===2?0.90:n===3?0.85:n===4?0.80:0.75;
+  return {R1,R:R1/(n*eta),eta,n};
+}
+function assignPhases(rows,forn){
+  const set=forn==='mono'?['A']:forn==='bi'?['A','B']:['A','B','C'];
+  const L={A:0,B:0,C:0}; const out={};
+  [...rows].sort((a,b)=>(+b.c.va||0)-(+a.c.va||0)).forEach(({c})=>{
+    const S=+c.va||0;
+    if(c.lig==='3F'){ set.forEach(p=>L[p]+=S/set.length); out[c.id]=set.length===3?'ABC':set.join(''); }
+    else if(c.lig==='FF'){
+      const pairs=set.length===3?[['A','B'],['B','C'],['C','A']]:set.length===2?[['A','B']]:[['A']];
+      let best=pairs[0],bv=Infinity; pairs.forEach(p=>{const v=p.reduce((s,x)=>s+L[x],0);if(v<bv){bv=v;best=p}});
+      best.forEach(p=>L[p]+=S/best.length); out[c.id]=best.join('');
+    } else { let best=set[0]; set.forEach(p=>{if(L[p]<L[best])best=p}); L[best]+=S; out[c.id]=best; }
+  });
+  const used=set.map(p=>L[p]); const mean=used.reduce((a,b)=>a+b,0)/used.length||0;
+  const desq=mean>0&&used.length>1?(Math.max(...used)-mean)/mean*100:0;
+  return {L,out,set,desq};
+}
+function compute(S){
+  const P=S.p;
+  const rows=S.circ.map(c=>({c,r:calcCirc(c,P)}));
+  const totS=rows.reduce((s,x)=>s+(+x.c.va||0),0), totW=rows.reduce((s,x)=>s+x.r.W,0);
+  const ph=assignPhases(rows,P.forn);
+  const alim=calcAlim(totS,P);
+  const ambs=S.amb.map(a=>({a,r:ambCalc(a)}));
+  const luz=S.luz.map(z=>({z,r:luzCalc(z)}));
+  const terra=terraCalc(S.terra);
+  return {rows,totS,totW,ph,alim,ambs,luz,terra};
+}
+//#CALC-END
+
+/* ---------- estado ---------- */
+const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
+const fmt=(n,d=1)=>Number.isFinite(n)?n.toLocaleString('pt-BR',{minimumFractionDigits:d,maximumFractionDigits:d}):'—';
+const brl=n=>(Number.isFinite(n)?n:0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const LS='bancada-eletrica-v1';
+let S, D, DB=null, UID=null, DL=null, ready=false, active='projeto', EXEMPLO=true;
+
+function pDefaults(){return {obra:'',cliente:'',endereco:'',cidade:'Tianguá - CE',tipo:'Residencial',area:'',rt:'José Gilmar',crt:'',trt:'',data:new Date().toISOString().slice(0,10),
+  sistema:'220/127',forn:'tri',esquema:'TN-S',temp:30,quedaMax:4,fd:0.7,lAlim:12,mAlim:'B1',bdi:25,desconto:0}}
+function blank(){return {seq:1,p:pDefaults(),amb:[],circ:[],luz:[],orc:[],chk:{},terra:{rho:300,L:2.4,d:15.9,n:2}}}
+function nid(){return S.seq++}
+function seed(){
+  S=blank(); S.p.obra='Residência de exemplo'; S.p.cliente='Cliente de exemplo'; S.p.endereco='Rua Exemplo, 100'; S.p.area=62;
+  [['Sala','sala',16,16],['Quarto 1','dorm',10,12.6],['Quarto 2','dorm',9,12],['Cozinha','coz',9,12],['Banheiro','ban',4,8],['Área de serviço','serv',4.5,8.5]]
+    .forEach(([nome,tipo,area,perim])=>S.amb.push({id:nid(),nome,tipo,area,perim}));
+  genCircuits();
+  S.circ.push(newCirc('chuveiro',{nome:'Chuveiro do banheiro',va:5500,L:10,lig:'FF'}));
+  S.circ.push(newCirc('ac',{nome:'Ar-condicionado Quarto 1',va:1200,L:8,lig:'FF'}));
+  [['Sala de estar',4,4,1600,15],['Cozinha residencial',3,3,1600,15],['Dormitório',3.3,3,1600,15]].forEach(([a,c,l,lm,w],i)=>{
+    const z=newLuz(); z.nome=['Sala','Cozinha','Quarto 1'][i]; z.ativ=a; z.E=ATIV.find(x=>x[0]===a)[1]; z.comp=c; z.larg=l; z.lm=lm; z.w=w; S.luz.push(z);});
+  regenOrc(); EXEMPLO=true;
+}
+function newCirc(tipo,o={}){const t=TIPOS[tipo];return Object.assign({id:nid(),nome:t.n,tipo,va:1000,fp:t.fp,lig:'FN',L:12,met:'B1',agr:3,dr:t.dr,auto:false},o)}
+function newLuz(){return {id:nid(),nome:'Ambiente',ativ:'Sala de estar',E:150,comp:4,larg:3,pe:2.7,plano:0.8,lm:1600,w:15,u:'',fm:0.8}}
+function genCircuits(){
+  S.circ=S.circ.filter(c=>!c.auto);
+  const ilu=S.amb.reduce((s,a)=>s+ambCalc(a).iluVA,0);
+  const gen=[];
+  if(ilu>0) gen.push(newCirc('ilum',{nome:'Iluminação geral',va:ilu,L:15,auto:true}));
+  const groups={};
+  S.amb.forEach(a=>{const g=GRP[a.tipo]||'Sala e áreas sociais';groups[g]=(groups[g]||0)+ambCalc(a).tugVA});
+  Object.entries(groups).forEach(([g,va])=>gen.push(newCirc('tug',{nome:'TUG – '+g,va,L:12,auto:true})));
+  S.circ=[...gen,...S.circ];
+}
+function peerKey(){return 'data/users/'+UID+'/projeto'}
+
+/* ---------- persistência ---------- */
+let saveT=null, saving=false, dirty=false;
+function setBadge(t){$('#badge').textContent=t}
+function scheduleSave(){ if(!ready)return; setBadge('salvando…'); clearTimeout(saveT); saveT=setTimeout(doSave,700) }
+async function doSave(){
+  if(saving){dirty=true;return} saving=true;
+  const json=JSON.stringify({S,EXEMPLO});
+  try{localStorage.setItem(LS,json)}catch(e){}
+  if(DB&&UID){
+    try{await DB.doc(peerKey()).set({v:1,json,at:Date.now()});setBadge('salvo na sua conta')}
+    catch(e){setBadge('salvo só neste aparelho')}
+  } else setBadge('salvo só neste aparelho');
+  saving=false; if(dirty){dirty=false;doSave()}
+}
+function adopt(text){
+  const o=JSON.parse(text); const s=o.S||o;
+  const b=blank(); S=Object.assign(b,s); S.p=Object.assign(pDefaults(),s.p||{}); S.terra=Object.assign(b.terra,s.terra||{});
+  EXEMPLO=o.S?!!o.EXEMPLO:false;
+}
+async function boot(){
+  let loaded=false;
+  try{
+    if(window.claude&&claude.use){
+      const [db,user,dl]=await Promise.all([claude.use('db').catch(()=>null),claude.use('user').catch(()=>null),claude.use('downloads').catch(()=>null)]);
+      DB=db;DL=dl; UID=user?await user.id():null;
+      if(!DL){$('#b-backup').hidden=true;$('#b-memorial').hidden=true}
+      if(DB&&UID){
+        const snap=await Promise.race([DB.doc(peerKey()).get(),new Promise((_,r)=>setTimeout(()=>r(new Error('t')),10000))]);
+        if(snap.exists){adopt(snap.data().json);loaded=true}
+      }
+    } else {$('#b-backup').hidden=true;$('#b-memorial').hidden=true}
+  }catch(e){}
+  if(!loaded){
+    try{const t=localStorage.getItem(LS);if(t){adopt(t);loaded=true}}catch(e){}
+  }
+  ready=true; renderAll(); setBadge(DB&&UID?'conta conectada':'só neste aparelho');
+  if(loaded) scheduleSave();
+}
+
+/* ---------- orçamento: materiais automáticos ---------- */
+const CABO={1.5:2.6,2.5:4.2,4:6.5,6:9.5,10:16,16:25,25:40,35:55,50:78,70:110,95:150,120:190,150:235,185:290,240:370};
+function defPU(key){
+  if(key.startsWith('cabo_'))return CABO[+key.slice(5)]||0;
+  if(key.startsWith('dj_')){const [,p,i]=key.split('_');return ({1:14,2:42,3:90}[p]||90)+0.4*i}
+  if(key.startsWith('dr_')){const r=+key.split('_')[2];return r<=25?190:r<=40?210:r<=63?260:340}
+  return {dps:260,qd:380,tomada:14,interruptor:12,luminaria:48,caixa:3.5,eletro:4.2,haste:55,cx_terra:35,bep:60,cabo_bep:12,mo_ponto:85,mo_qd:450,mo_terra:380,trt:0}[key]||0;
+}
+function buildAuto(){
+  const A=[], add=(key,cat,desc,un,qtd)=>{if(qtd>0)A.push({key,cat,desc,un,qtd:Math.round(qtd*100)/100})};
+  const cab={},dj={},dr={}; let polos=0,nDR=0,somaL=0,nTUE=0;
+  D.rows.forEach(({c,r})=>{
+    if(!r.ok)return; const L=(+c.L||0)*1.1; somaL+=(+c.L||0);
+    const nf=c.lig==='3F'?3:2; cab[r.s]=(cab[r.s]||0)+L*nf; cab[r.pe]=(cab[r.pe]||0)+L;
+    dj[r.pol+'_'+r.In]=(dj[r.pol+'_'+r.In]||0)+1; polos+=r.pol;
+    if(c.dr){const p=c.lig==='3F'?4:2,rt=r.In<=25?25:r.In<=40?40:r.In<=63?63:80;dr[p+'_'+rt]=(dr[p+'_'+rt]||0)+1;nDR++;polos+=p}
+    if(['tue','ac','chuveiro','motor'].includes(c.tipo))nTUE++;
+  });
+  const al=D.alim;
+  if(al.ok){const nf=S.p.forn==='tri'?4:S.p.forn==='bi'?3:2; cab[al.s]=(cab[al.s]||0)+(+S.p.lAlim||0)*1.1*nf; cab[al.pe]=(cab[al.pe]||0)+(+S.p.lAlim||0)*1.1;
+    dj[al.pol+'_'+al.In]=(dj[al.pol+'_'+al.In]||0)+1; polos+=al.pol}
+  Object.entries(cab).forEach(([s,m])=>add('cabo_'+s,'Materiais',`Cabo de cobre flexível ${s} mm², 450/750 V, antichama (inclui 10% de sobra)`,'m',m));
+  Object.entries(dj).forEach(([k,q])=>{const [p,i]=k.split('_');add('dj_'+p+'_'+i,'Materiais',`Disjuntor DIN curva C ${p}P ${i} A (NBR NM 60898)`,'un',q)});
+  Object.entries(dr).forEach(([k,q])=>{const [p,i]=k.split('_');add('dr_'+p+'_'+i,'Materiais',`Interruptor DR ${p}P ${i} A / 30 mA (um por circuito; agrupe se o projeto permitir)`,'un',q)});
+  add('dps','Materiais','Conjunto DPS para o quadro (classe e Uc conforme avaliação do projeto)','cj',1);
+  const mod=Math.ceil((polos+3)*1.25), QM=[12,18,24,30,36,44,54,70], q=QM.find(x=>x>=mod)||mod;
+  add('qd','Materiais',`Quadro de distribuição de embutir, mínimo ${q} módulos DIN (inclui reserva de 25%)`,'un',1);
+  const nIlu=S.amb.length, nTug=D.ambs.reduce((s,x)=>s+x.r.tugN,0);
+  add('tomada','Materiais','Tomada 2P+T 10 A/20 A com placa (NBR 14136)','un',nTug+nTUE);
+  add('interruptor','Materiais','Interruptor simples com placa','un',nIlu);
+  add('luminaria','Materiais','Luminária LED (ver aba Luz para quantidade por ambiente)','un',D.luz.reduce((s,x)=>s+x.r.N,0)||nIlu);
+  add('caixa','Materiais','Caixa 4x2 de embutir','un',nTug+nTUE+nIlu);
+  add('eletro','Materiais','Eletroduto flexível/rígido (estimativa: 70% da soma dos comprimentos; ajustar pelo traçado)','m',somaL*0.7);
+  add('haste','Materiais','Haste de aterramento cobreada 5/8" x 2,4 m','un',D.terra.n);
+  add('cx_terra','Materiais','Caixa de inspeção de aterramento','un',1);
+  add('bep','Materiais','Barramento de equipotencialização principal (BEP)','un',1);
+  add('cabo_bep','Materiais',`Condutor de equipotencialização/aterramento (estimado; seção em Terra)`,'m',5);
+  add('mo_ponto','Mão de obra','Instalação de pontos (iluminação, tomadas e circuitos específicos)','pt',nIlu+nTug+nTUE);
+  add('mo_qd','Mão de obra','Montagem e identificação do quadro de distribuição','un',1);
+  add('mo_terra','Mão de obra','Execução do aterramento e equipotencialização','un',1);
+  add('trt','Taxas','Taxa da TRT (informar o valor)','un',1);
+  return A;
+}
+function regenOrc(){
+  D=compute(S);
+  const old={}; S.orc.filter(i=>i.auto).forEach(i=>old[i.key]=i);
+  const keepManual=S.orc.filter(i=>!i.auto);
+  const auto=buildAuto().map(a=>({id:nid(),auto:true,key:a.key,cat:a.cat,desc:a.desc,un:a.un,qtd:a.qtd,pu:old[a.key]?old[a.key].pu:defPU(a.key)}));
+  S.orc=[...auto,...keepManual];
+}
+
+/* ---------- render: formulários ---------- */
+function opt(list,sel){return list.map(([v,t])=>`<option value="${esc(v)}"${String(v)===String(sel)?' selected':''}>${esc(t)}</option>`).join('')}
+function fld(label,html,cls=''){return `<label class="${cls}">${label}${html}</label>`}
+function inp(attr,val,type='text',extra=''){return `<input type="${type}" ${type==='number'?'inputmode="decimal" step="any"':''} ${attr} value="${esc(val)}" ${extra}>`}
+function sel(attr,list,val){return `<select ${attr}>${opt(list,val)}</select>`}
+function renderProjeto(){
+  const p=S.p;
+  $('#f-obra').innerHTML=
+    fld('Obra',inp('data-p="obra"',p.obra),'wide')+fld('Cliente',inp('data-p="cliente"',p.cliente))+
+    fld('Cidade / UF',inp('data-p="cidade"',p.cidade))+fld('Endereço',inp('data-p="endereco"',p.endereco),'wide')+
+    fld('Uso',sel('data-p="tipo"',[['Residencial','Residencial'],['Comercial','Comercial'],['Predial','Predial'],['Industrial','Industrial']],p.tipo))+
+    fld('Área construída (m²)',inp('data-p="area"',p.area,'number'))+
+    fld('Responsável técnico',inp('data-p="rt"',p.rt))+fld('Registro no CRT',inp('data-p="crt"',p.crt))+
+    fld('Nº da TRT',inp('data-p="trt"',p.trt))+fld('Data',inp('data-p="data"',p.data,'date'));
+  $('#f-sistema').innerHTML=
+    fld('Tensão (linha/fase)',sel('data-p="sistema"',[['220/127','220/127 V'],['380/220','380/220 V']],p.sistema))+
+    fld('Fornecimento',sel('data-p="forn"',[['mono','Monofásico'],['bi','Bifásico'],['tri','Trifásico']],p.forn))+
+    fld('Esquema de aterramento',sel('data-p="esquema"',[['TN-S','TN-S'],['TN-C-S','TN-C-S'],['TT','TT']],p.esquema))+
+    fld('Temperatura ambiente (°C)',sel('data-p="temp"',[10,15,20,25,30,35,40,45,50].map(t=>[t,t+' °C']),p.temp))+
+    fld('Queda de tensão máx. (%)',inp('data-p="quedaMax"',p.quedaMax,'number'))+
+    fld('Fator de demanda',inp('data-p="fd"',p.fd,'number'))+
+    fld('Distância medidor → quadro (m)',inp('data-p="lAlim"',p.lAlim,'number'))+
+    fld('Método do alimentador',sel('data-p="mAlim"',[['B1','B1 – eletroduto'],['C','C – cabo sobre parede']],p.mAlim));
+  $('#f-orc').innerHTML=fld('BDI (%)',inp('data-p="bdi"',p.bdi,'number'))+fld('Desconto (R$)',inp('data-p="desconto"',p.desconto,'number'));
+  $('#exemplo-aviso').textContent=EXEMPLO?'Este projeto é um exemplo de demonstração (residência de 62 m²). Troque os dados ou comece em branco no fim desta página.':'Dados que alimentam cálculos, orçamento e memorial.';
+  $('#save-note').textContent=(DB&&UID)?'Seus projetos ficam salvos na sua conta Claude, só você acessa. Faça um backup antes de mudanças grandes.':'Salvo apenas neste navegador. Use o backup para não perder dados.';
+}
+function renderAmb(){
+  $('#list-amb').innerHTML=S.amb.map((a,i)=>`<article class="card" data-row="amb:${a.id}">
+    <div class="row-h"><span class="tag">A${i+1}</span>${inp(`data-l="amb" data-id="${a.id}" data-f="nome"`,a.nome)}<button class="b x" data-act="del" data-l="amb" data-id="${a.id}" aria-label="Remover ambiente">✕</button></div>
+    <div class="grid">${fld('Tipo',sel(`data-l="amb" data-id="${a.id}" data-f="tipo"`,Object.entries(AMB),a.tipo))}
+      ${fld('Área (m²)',inp(`data-l="amb" data-id="${a.id}" data-f="area"`,a.area,'number'))}
+      ${fld('Perímetro (m)',inp(`data-l="amb" data-id="${a.id}" data-f="perim"`,a.perim,'number'))}</div>
+    <div class="chips" data-res="amb:${a.id}"></div></article>`).join('')||'<p class="note">Nenhum ambiente. Adicione os cômodos para calcular a previsão mínima de cargas.</p>';
+}
+function circCard(c,i){
+  const {Vf,Vl}=sysV(S.p);
+  return `<article class="card" data-row="circ:${c.id}">
+    <div class="row-h"><span class="tag">C${i+1}</span>${inp(`data-l="circ" data-id="${c.id}" data-f="nome"`,c.nome)}<button class="b x" data-act="del" data-l="circ" data-id="${c.id}" aria-label="Remover circuito">✕</button></div>
+    <div class="grid">
+      ${fld('Tipo',sel(`data-l="circ" data-id="${c.id}" data-f="tipo"`,Object.entries(TIPOS).map(([k,v])=>[k,v.n]),c.tipo))}
+      ${fld('Potência (VA)',inp(`data-l="circ" data-id="${c.id}" data-f="va"`,c.va,'number'))}
+      ${fld('Fator de potência',inp(`data-l="circ" data-id="${c.id}" data-f="fp"`,c.fp,'number'))}
+      ${fld('Ligação',sel(`data-l="circ" data-id="${c.id}" data-f="lig"`,[['FN',`Fase + neutro (${Vf} V)`],['FF',`Fase + fase (${Vl} V)`],['3F',`Trifásico (${Vl} V)`]],c.lig))}
+      ${fld('Comprimento (m)',inp(`data-l="circ" data-id="${c.id}" data-f="L"`,c.L,'number'))}
+      ${fld('Método',sel(`data-l="circ" data-id="${c.id}" data-f="met"`,[['B1','B1 – eletroduto'],['C','C – cabo sobre parede']],c.met))}
+      ${fld('Circuitos agrupados',inp(`data-l="circ" data-id="${c.id}" data-f="agr"`,c.agr,'number'))}
+      <label class="ck"><input type="checkbox" data-l="circ" data-id="${c.id}" data-f="dr" ${c.dr?'checked':''}>DR 30 mA</label>
+    </div>
+    <div data-res="circ:${c.id}"></div></article>`;
+}
+function renderCirc(){
+  $('#list-circ').innerHTML=S.circ.map(circCard).join('')||'<p class="note">Nenhum circuito. Gere pelos ambientes ou adicione abaixo.</p>';
+  $('#add-tipo').innerHTML=opt(Object.entries(TIPOS).map(([k,v])=>[k,v.n]),'tug');
+}
+function renderLuz(){
+  $('#list-luz').innerHTML=S.luz.map((z,i)=>`<article class="card" data-row="luz:${z.id}">
+    <div class="row-h"><span class="tag">L${i+1}</span>${inp(`data-l="luz" data-id="${z.id}" data-f="nome"`,z.nome)}<button class="b x" data-act="del" data-l="luz" data-id="${z.id}" aria-label="Remover">✕</button></div>
+    <div class="grid">
+      ${fld('Atividade',sel(`data-l="luz" data-id="${z.id}" data-f="ativ"`,ATIV.map(a=>[a[0],a[0]]),z.ativ))}
+      ${fld('Iluminância E (lux)',inp(`data-l="luz" data-id="${z.id}" data-f="E"`,z.E,'number'))}
+      ${fld('Comprimento (m)',inp(`data-l="luz" data-id="${z.id}" data-f="comp"`,z.comp,'number'))}
+      ${fld('Largura (m)',inp(`data-l="luz" data-id="${z.id}" data-f="larg"`,z.larg,'number'))}
+      ${fld('Pé-direito (m)',inp(`data-l="luz" data-id="${z.id}" data-f="pe"`,z.pe,'number'))}
+      ${fld('Plano de trabalho (m)',inp(`data-l="luz" data-id="${z.id}" data-f="plano"`,z.plano,'number'))}
+      ${fld('Fluxo da luminária (lm)',inp(`data-l="luz" data-id="${z.id}" data-f="lm"`,z.lm,'number'))}
+      ${fld('Potência da luminária (W)',inp(`data-l="luz" data-id="${z.id}" data-f="w"`,z.w,'number'))}
+      ${fld('u do fabricante (opcional)',inp(`data-l="luz" data-id="${z.id}" data-f="u"`,z.u,'number','placeholder="automático"'))}
+      ${fld('Fator de manutenção fm',inp(`data-l="luz" data-id="${z.id}" data-f="fm"`,z.fm,'number'))}
+    </div><div class="chips" data-res="luz:${z.id}"></div></article>`).join('')||'<p class="note">Adicione um ambiente para calcular a quantidade de luminárias.</p>';
+}
+function renderTerraForm(){
+  const t=S.terra;
+  $('#f-terra').innerHTML=fld('Resistividade do solo (Ω·m)',inp('data-t="rho"',t.rho,'number'))+fld('Comprimento da haste (m)',inp('data-t="L"',t.L,'number'))+
+    fld('Diâmetro da haste (mm)',inp('data-t="d"',t.d,'number'))+fld('Quantidade de hastes',inp('data-t="n"',t.n,'number'));
+}
+function itemRow(i){
+  return `<div class="orc-row" data-row="orc:${i.id}">
+    <div class="d">${inp(`data-l="orc" data-id="${i.id}" data-f="desc"`,i.desc)}<button class="b x" data-act="del" data-l="orc" data-id="${i.id}" aria-label="Remover item">✕</button></div>
+    ${fld('Un.',inp(`data-l="orc" data-id="${i.id}" data-f="un"`,i.un))}
+    ${fld('Quantidade',inp(`data-l="orc" data-id="${i.id}" data-f="qtd"`,i.qtd,'number'))}
+    ${fld('Preço unit. (R$)',inp(`data-l="orc" data-id="${i.id}" data-f="pu"`,i.pu,'number'))}
+    <div class="t" data-res="orc:${i.id}"></div></div>`;
+}
+function renderOrc(){
+  const cats=['Materiais','Mão de obra','Taxas']; let h='';
+  cats.forEach(cat=>{const it=S.orc.filter(i=>i.cat===cat); if(it.length)h+=`<h3 style="margin:14px 0 2px">${cat}</h3>`+it.map(itemRow).join('')});
+  $('#list-orc').innerHTML=h||'<p class="note">Sem itens. Use "Atualizar materiais pelos circuitos".</p>';
+}
+const MAN=[
+  ['Projeto e documentos',[
+    ['diag','Diagrama unifilar e planta com pontos, circuitos e quadro','NBR 5410 e NR-10 (10.3.9 documentação)'],
+    ['ident','Quadros e circuitos identificados de forma legível e durável','NBR 5410 (identificação de componentes)'],
+    ['trt','TRT emitida e número informado no memorial','Conselho profissional (CFT/CRT)'],
+    ['pront','Prontuário de instalações elétricas (obrigatório acima de 75 kW de carga instalada)','NR-10, item 10.2.4'],
+  ]],
+  ['Proteção e segurança',[
+    ['dps','Necessidade de DPS avaliada e registrada','NBR 5410 (proteção contra surtos)'],
+    ['spda','Avaliação de risco para SPDA feita ou dispensa justificada','NBR 5419-2'],
+    ['eqp','Equipotencialização principal (BEP) com tubulações metálicas e elementos condutores','NBR 5410 (equipotencialização)'],
+    ['epi','Procedimentos de desenergização, EPI/EPC, sinalização e trabalhadores habilitados','NR-10'],
+  ]],
+  ['Verificação final',[
+    ['cont','Continuidade dos condutores de proteção e equipotencialização','NBR 5410, verificação final'],
+    ['isol','Resistência de isolação medida','NBR 5410, verificação final'],
+    ['rt_med','Resistência de aterramento medida com terrômetro e registrada','Medição em campo'],
+    ['dr_test','Teste de atuação dos DR (botão de teste e equipamento de ensaio)','NBR 5410, verificação final'],
+  ]]
+];
+function renderNormasMan(){
+  $('#normas-man').innerHTML=MAN.map(([g,items])=>`<h3 style="margin:10px 0 2px">${g}</h3>`+items.map(([k,t,ref])=>
+    `<label class="it ck" style="display:grid;grid-template-columns:24px 1fr"><input type="checkbox" data-chk="${k}" ${S.chk[k]?'checked':''}><span>${t}<small>${ref}</small></span></label>`).join('')).join('');
+}
+function renderAll(){
+  renderProjeto();renderAmb();renderCirc();renderLuz();renderTerraForm();renderNormasMan();
+  if(!S.orc.length&&S.circ.length)regenOrc();
+  renderOrc();paint();
+}
+
+/* ---------- saídas calculadas ---------- */
+const chip=(k,v,cls='')=>`<span class="chip ${cls}"><i>${k}</i>${v}</span>`;
+function paintHeader(){
+  const al=D.alim, dem=al.Sd/1000;
+  $('#kpis').innerHTML=
+    `<div class="kpi"><span>Carga instalada</span><b>${fmt(D.totW/1000,2)} kW</b><small>${fmt(D.totS/1000,2)} kVA</small></div>`+
+    `<div class="kpi"><span>Demanda</span><b>${fmt(dem,2)} kVA</b><small>FD ${fmt(+S.p.fd,2)} · ${fmt(al.I,1)} A</small></div>`+
+    `<div class="kpi"><span>Disjuntor geral</span><b>${al.ok?al.pol+'P '+al.In+' A':'—'}</b><small>${al.ok?fmt(al.s,1)+' mm² '+S.p.mAlim:'sem solução'}</small></div>`+
+    `<div class="kpi"><span>Circuitos</span><b>${S.circ.length}</b><small>${pend().length} pendência${pend().length===1?'':'s'}</small></div>`;
+}
+function circRes(c,r,ph){
+  let st='ok',txt='Atende';
+  if(!r.ok||r.err){st='bad';txt='Revisar'}
+  else if(r.byDV||r.note){st='warn';txt='Atenção'}
+  const msgs=[]; if(r.err)msgs.push(['bad',r.err]); if(!r.ok)msgs.push(['bad',r.note]);
+  else{ if(r.byDV)msgs.push(['warn','Seção definida pela queda de tensão, não pela corrente.']); if(r.note)msgs.push(['warn',r.note+'.']);}
+  return `<div class="chips">
+    ${chip('Ib',fmt(r.I,1)+' A')}${r.ok?chip('Fase/neutro',fmt(r.s,1)+' mm²')+chip('PE',fmt(r.pe,1)+' mm²')+chip('Disjuntor',r.pol+'P '+r.In+' A')+chip('Iz',fmt(r.Iz,1)+' A')+chip('ΔV',fmt(r.dvp,2)+' %'):''}
+    ${chip('Fase',ph||'—')}${c.dr?chip('DR','30 mA'):''}<span class="pill ${st}">${txt}</span></div>`+
+    msgs.map(([k,m])=>`<p class="msg ${k}">${esc(m)}</p>`).join('');
+}
+function paintOutputs(){
+  D.rows.forEach(({c,r})=>{const e=$(`[data-res="circ:${c.id}"]`);if(e)e.innerHTML=circRes(c,r,D.ph.out[c.id])});
+  D.ambs.forEach(({a,r})=>{const e=$(`[data-res="amb:${a.id}"]`);if(e)e.innerHTML=chip('Iluminação',fmt(r.iluVA,0)+' VA')+chip('Tomadas (TUG)',r.tugN+' pt')+chip('TUG',fmt(r.tugVA,0)+' VA')});
+  const ti=D.ambs.reduce((s,x)=>s+x.r.iluVA,0),tt=D.ambs.reduce((s,x)=>s+x.r.tugVA,0),tp=D.ambs.reduce((s,x)=>s+x.r.tugN,0);
+  $('#amb-tot').innerHTML=`<div class="chips" style="margin-top:0">${chip('Iluminação',fmt(ti,0)+' VA')}${chip('TUG',fmt(tt,0)+' VA')}${chip('Pontos de tomada',tp)}${chip('Área',fmt(S.amb.reduce((s,a)=>s+(+a.area||0),0),1)+' m²')}</div>`;
+  const al=D.alim;
+  $('#alim-res').innerHTML=al.ok?`<div class="chips" style="margin-top:0">${chip('Demanda',fmt(al.Sd/1000,2)+' kVA')}${chip('Corrente',fmt(al.I,1)+' A')}${chip('Condutor',fmt(al.s,1)+' mm²')}${chip('PE',fmt(al.pe,1)+' mm²')}${chip('Disjuntor geral',al.pol+'P '+al.In+' A')}${chip('ΔV',fmt(al.dvp,2)+' %')}</div>
+    <p class="note">Queda de tensão do alimentador limitada a 2%, adotada para sobrar margem aos circuitos terminais.</p>`:`<p class="msg bad">${esc(al.note)}</p>`;
+  // quadro de cargas
+  const rows=D.rows.map(({c,r},i)=>`<tr><td>C${i+1}</td><td class="l">${esc(c.nome)}</td><td>${TIPOS[c.tipo].n.split(' (')[0]}</td><td class="n">${fmt(+c.va,0)}</td><td class="n">${fmt(r.W,0)}</td><td>${c.lig}</td><td>${D.ph.out[c.id]}</td><td>${r.ok?r.pol+'P '+r.In+' A':'—'}</td><td class="n">${r.ok?fmt(r.s,1)+' / '+fmt(r.pe,1):'—'}</td><td class="n">${r.ok?fmt(r.dvp,2):'—'}</td><td>${c.dr?'sim':'—'}</td></tr>`).join('');
+  $('#qc').innerHTML=`<table><thead><tr><th>Circ.</th><th class="l">Descrição</th><th>Tipo</th><th class="n">VA</th><th class="n">W</th><th>Lig.</th><th>Fase</th><th>Disjuntor</th><th class="n">F-N / PE mm²</th><th class="n">ΔV %</th><th>DR</th></tr></thead><tbody>${rows}</tbody>
+    <tfoot><tr><td colspan="3">Total</td><td class="n">${fmt(D.totS,0)}</td><td class="n">${fmt(D.totW,0)}</td><td colspan="6"></td></tr></tfoot></table>`;
+  const mx=Math.max(1,...D.ph.set.map(p=>D.ph.L[p]));
+  $('#phases').innerHTML=D.ph.set.map(p=>`<div class="ph"><span>${p}</span><div class="bar"><span style="width:${D.ph.L[p]/mx*100}%"></span></div><span>${fmt(D.ph.L[p],0)} VA</span></div>`).join('');
+  $('#phase-note').textContent=D.ph.set.length>1?`Desequilíbrio estimado: ${fmt(D.ph.desq,1)} % acima da média. Fases atribuídas automaticamente por carga.`:'Fornecimento monofásico: todas as cargas na mesma fase.';
+  D.luz.forEach(({z,r})=>{const e=$(`[data-res="luz:${z.id}"]`);if(e)e.innerHTML=
+    chip('Área',fmt(r.A,1)+' m²')+chip('K',fmt(r.K,2))+chip('u',fmt(r.u,2))+chip('Fluxo total',fmt(r.phi,0)+' lm')+chip('Luminárias',r.N+' un')+chip('E real',fmt(r.Er,0)+' lux')+chip('Potência',fmt(r.P,0)+' W')+chip('Densidade',fmt(r.dens,1)+' W/m²')});
+  paintTerra(); paintOrc();
+  if(active==='memorial')paintMemorial();
+  if(active==='normas')paintNormas();
+}
+function paintTerra(){
+  const t=D.terra, tt=S.p.esquema==='TT';
+  const ok=tt?t.R<=50/0.03:t.R<=10;
+  $('#terra-res').innerHTML=`<div class="chips">${chip('1 haste',fmt(t.R1,1)+' Ω')}${chip(t.n+' haste'+(t.n>1?'s':''),fmt(t.R,1)+' Ω')}${chip('Eficiência',fmt(t.eta*100,0)+' %')}<span class="pill ${ok?'ok':'bad'}">${ok?'Atende':'Acima do limite'}</span></div>
+    <p class="note">${tt?'Esquema TT: R<sub>A</sub> · I<sub>Δn</sub> ≤ 50 V, com DR de 30 mA resulta em até 1.666 Ω. Mantenha o valor mais baixo possível.':'Meta usual de projeto: até 10 Ω, medida em campo com terrômetro.'} Hastes alinhadas e espaçadas ao menos pelo comprimento de uma haste. Estimativa pela fórmula de Dwight; a resistividade do solo varia com umidade e estação: 100 Ω·m argila úmida, 300 solo comum, 1000 arenoso seco.</p>`;
+  const peMax=Math.max(0,...D.rows.filter(x=>x.r.ok).map(x=>x.r.pe),D.alim.ok?D.alim.pe:0);
+  const bep=[6,10,16,25].find(x=>x>=Math.min(25,Math.max(6,peMax/2)))||25;
+  $('#pe-res').innerHTML=`<div class="chips" style="margin-top:0">${chip('Maior PE do projeto',fmt(peMax,1)+' mm²')}${chip('Equipotencialização principal',fmt(bep,0)+' mm² (Cu)')}</div>
+    <p class="note">PE dos circuitos: igual à fase até 16 mm², 16 mm² entre 16 e 35 mm², metade da fase acima de 35 mm² (Tabela 58). Equipotencialização principal: metade do maior PE, mínimo 6 mm² e máximo 25 mm² em cobre.</p>`;
+  D.bep=bep;
+}
+function orcTotals(){
+  const t={Materiais:0,'Mão de obra':0,Taxas:0};
+  S.orc.forEach(i=>{t[i.cat]=(t[i.cat]||0)+(+i.qtd||0)*(+i.pu||0)});
+  const sub=t.Materiais+t['Mão de obra']+t.Taxas, bdi=sub*(+S.p.bdi||0)/100, tot=sub+bdi-(+S.p.desconto||0);
+  return {t,sub,bdi,tot};
+}
+function paintOrc(){
+  S.orc.forEach(i=>{const e=$(`[data-res="orc:${i.id}"]`);if(e)e.textContent=brl((+i.qtd||0)*(+i.pu||0))});
+  const o=orcTotals();
+  $('#orc-sum').innerHTML=`<span>Materiais</span><span>${brl(o.t.Materiais)}</span><span>Mão de obra</span><span>${brl(o.t['Mão de obra'])}</span><span>Taxas</span><span>${brl(o.t.Taxas)}</span><span>Subtotal</span><span>${brl(o.sub)}</span><span>BDI (${fmt(+S.p.bdi||0,1)} %)</span><span>${brl(o.bdi)}</span><span>Desconto</span><span>− ${brl(+S.p.desconto||0)}</span><span class="tot">Total</span><span class="tot">${brl(o.tot)}</span>`;
+}
+function checks(){
+  const R=D.rows, L=[];
+  const okAll=f=>R.length>0&&R.every(f);
+  L.push(['Seção mínima: 1,5 mm² em iluminação, 2,5 mm² em força',okAll(x=>x.r.ok&&x.r.s>=TIPOS[x.c.tipo].smin),'NBR 5410, 6.2.6.1']);
+  L.push(['Ib ≤ In ≤ Iz em todos os circuitos',okAll(x=>x.r.ok&&x.r.I<=x.r.In&&x.r.In<=x.r.Iz),'NBR 5410, 5.3.4.1']);
+  L.push([`Queda de tensão dentro de ${fmt(+S.p.quedaMax,1)} %`,okAll(x=>x.r.ok&&x.r.dvp<=+S.p.quedaMax),'NBR 5410, 6.2.7']);
+  L.push(['DR de 30 mA nos circuitos de tomadas, chuveiro e uso específico em área molhada',R.filter(x=>['tug','chuveiro','tue','ac'].includes(x.c.tipo)).every(x=>x.c.dr),'NBR 5410, 5.1.3.2']);
+  L.push(['Ligações compatíveis com o fornecimento',R.every(x=>!x.r.err),'Fornecimento da concessionária']);
+  L.push([`Resistência de aterramento estimada ${S.p.esquema==='TT'?'dentro do limite do DR':'≤ 10 Ω'}`,S.p.esquema==='TT'?D.terra.R<=50/0.03:D.terra.R<=10,'NBR 5410 / NBR 5419']);
+  L.push(['Alimentador dimensionado',D.alim.ok,'NBR 5410']);
+  if(D.ph.set.length>1)L.push([`Desequilíbrio entre fases ≤ 10 % (${fmt(D.ph.desq,1)} %)`,D.ph.desq<=10,'Boa prática']);
+  L.push([`Carga instalada ${D.totW>75000?'acima':'abaixo'} de 75 kW${D.totW>75000?': prontuário obrigatório':''}`,D.totW<=75000?true:null,'NR-10, 10.2.4']);
+  return L;
+}
+function pend(){return checks().filter(c=>c[1]===false)}
+function paintNormas(){
+  $('#normas-auto').innerHTML=checks().map(([t,ok,ref])=>`<div class="it"><span class="dot ${ok===true?'ok':ok===false?'bad':'na'}">${ok===true?'✓':ok===false?'!':'i'}</span><span>${t}<small>${ref}</small></span></div>`).join('');
+}
+
+/* ---------- memorial ---------- */
+function buildMemorial(){
+  const p=S.p, B=[], al=D.alim, o=orcTotals(), dataBR=p.data?p.data.split('-').reverse().join('/'):'';
+  const {Vf,Vl}=sysV(p);
+  const forn={mono:'monofásico (fase e neutro)',bi:'bifásico (duas fases e neutro)',tri:'trifásico (três fases e neutro)'}[p.forn];
+  B.push({h:'Identificação',kv:[['Obra',p.obra],['Cliente',p.cliente],['Local',[p.endereco,p.cidade].filter(Boolean).join(', ')],['Uso',p.tipo],['Área construída',p.area?fmt(+p.area,1)+' m²':'—'],
+    ['Responsável técnico',p.rt],['Registro',p.crt||'—'],['TRT nº',p.trt||'—'],['Data',dataBR]]});
+  B.push({h:'Objeto',p:[`Este memorial descreve as instalações elétricas de baixa tensão da obra "${p.obra||'—'}", com os critérios de dimensionamento, as características dos circuitos, o sistema de aterramento e as especificações dos principais materiais, em complemento às plantas e ao diagrama unifilar do projeto.`]});
+  B.push({h:'Normas e referências',ul:['ABNT NBR 5410 – Instalações elétricas de baixa tensão','NR-10 – Segurança em instalações e serviços em eletricidade','ABNT NBR 5419 – Proteção contra descargas atmosféricas (quando aplicável)','ABNT NBR ISO/CIE 8995-1 – Iluminação de ambientes de trabalho','ABNT NBR NM 60898 – Disjuntores; ABNT NBR 14136 – Plugues e tomadas; ABNT NBR 15465 – Eletrodutos plásticos','Normas e padrões de entrada da concessionária local']});
+  B.push({h:'Descrição da instalação',p:[
+    `O sistema é alimentado em ${p.sistema.replace('/',' V / ')} V, 60 Hz, fornecimento ${forn}, com esquema de aterramento ${p.esquema}. A carga instalada é de ${fmt(D.totW/1000,2)} kW (${fmt(D.totS/1000,2)} kVA), distribuída em ${S.circ.length} circuitos terminais.`,
+    al.ok?`Adotado fator de demanda ${fmt(+p.fd,2)}, resultando em demanda de ${fmt(al.Sd/1000,2)} kVA e corrente de ${fmt(al.I,1)} A. O alimentador, de ${fmt(+p.lAlim,0)} m, usa condutores de ${fmt(al.s,1)} mm² (método ${p.mAlim}) e é protegido por disjuntor geral ${al.pol}P de ${al.In} A.`:'O alimentador geral exige revisão de dimensionamento.']});
+  B.push({h:'Critérios de dimensionamento',ul:[
+    `Capacidade de condução de corrente pela Tabela 36 da NBR 5410 (condutores de cobre, isolação PVC 70 °C), com fator de temperatura ambiente de ${fmt(fTemp(p.temp),2)} para ${p.temp} °C e fator de agrupamento conforme a Tabela 42.`,
+    'Proteção contra sobrecarga: Ib ≤ In ≤ Iz, com disjuntores termomagnéticos curva C.',
+    `Queda de tensão máxima nos circuitos terminais de ${fmt(+p.quedaMax,1)} %.`,
+    'Seções mínimas: 1,5 mm² em circuitos de iluminação e 2,5 mm² em circuitos de força.',
+    'Proteção diferencial-residual de alta sensibilidade (30 mA) nos circuitos de tomadas, chuveiro e equipamentos em áreas molhadas.',
+    'Previsão de cargas conforme item 9.5.2 da NBR 5410: iluminação e pontos de tomada por ambiente.']});
+  B.push({h:'Quadro de circuitos',table:{head:['Circ.','Descrição','VA','Lig.','Fase','Disj.','Seção (mm²)','ΔV %','DR'],
+    rows:D.rows.map(({c,r},i)=>['C'+(i+1),c.nome,fmt(+c.va,0),c.lig,D.ph.out[c.id],r.ok?r.pol+'P '+r.In+' A':'—',r.ok?fmt(r.s,1)+' / PE '+fmt(r.pe,1):'—',r.ok?fmt(r.dvp,2):'—',c.dr?'30 mA':'—'])}});
+  if(D.luz.length)B.push({h:'Iluminação',p:['Cálculo pelo método dos lumens, com fator de manutenção e fator de utilização informados por ambiente.'],table:{head:['Ambiente','E (lux)','Área (m²)','Luminárias','Potência (W)','E real (lux)'],
+    rows:D.luz.map(({z,r})=>[z.nome,fmt(+z.E,0),fmt(r.A,1),r.N+' × '+fmt(+z.lm,0)+' lm',fmt(r.P,0),fmt(r.Er,0)])}});
+  B.push({h:'Aterramento e equipotencialização',p:[
+    `O eletrodo de aterramento é composto por ${D.terra.n} haste${D.terra.n>1?'s':''} cobreada${D.terra.n>1?'s':''} de ${fmt(+S.terra.L,1)} m, resistência estimada em ${fmt(D.terra.R,1)} Ω para solo de ${fmt(+S.terra.rho,0)} Ω·m. O valor deve ser confirmado por medição com terrômetro na conclusão da obra.`,
+    `Todos os circuitos possuem condutor de proteção (PE) dimensionado pela Tabela 58 da NBR 5410. A equipotencialização principal será feita no barramento BEP com condutor de ${fmt(D.bep||6,0)} mm² em cobre, ligando as tubulações metálicas e demais elementos condutores ao eletrodo de aterramento.`]});
+  B.push({h:'Materiais e especificações',ul:['Condutores de cobre flexível, classe 4 ou 5, isolação 450/750 V antichama, nas cores da NBR 5410 (azul-claro para neutro, verde ou verde-amarelo para PE).','Eletrodutos plásticos antichama, embutidos ou aparentes conforme o projeto, com taxa de ocupação máxima de 40%.','Quadro de distribuição com barramentos de neutro e PE, identificação dos circuitos e reserva de espaço.','Dispositivos de proteção certificados pelo Inmetro, conforme as normas citadas.']});
+  B.push({h:'Segurança (NR-10)',ul:['Serviços executados por profissionais habilitados, qualificados e autorizados, com desenergização, bloqueio e sinalização antes da intervenção.','Uso de EPI e EPC adequados à atividade e ferramentas isoladas.',D.totW>75000?'A carga instalada supera 75 kW: manter o Prontuário de Instalações Elétricas, conforme o item 10.2.4 da NR-10.':'Carga instalada de até 75 kW: prontuário não obrigatório pelo item 10.2.4, mantendo-se o diagrama unifilar e este memorial como documentação.']});
+  B.push({h:'Considerações finais',p:['A execução deve seguir o projeto, este memorial e as normas citadas. Qualquer alteração em campo deve ser avaliada e registrada pelo responsável técnico.'],sign:[`${p.cidade||''}, ${dataBR}`,p.rt||'',(p.crt?'Registro '+p.crt:'')+(p.trt?' · TRT nº '+p.trt:'')]});
+  return B;
+}
+function memoHTML(B){
+  return B.map((b,i)=>(i===0?`<div class="title">Memorial descritivo de instalações elétricas</div>`:'')+`<h3>${i+1}. ${esc(b.h)}</h3>`+
+    (b.kv?`<div class="kv">${b.kv.map(([k,v])=>`<span>${esc(k)}</span><span>${esc(v||'—')}</span>`).join('')}</div>`:'')+
+    (b.p||[]).map(x=>`<p>${esc(x)}</p>`).join('')+
+    (b.ul?`<ul>${b.ul.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:'')+
+    (b.table?`<div class="scroll"><table><thead><tr>${b.table.head.map(h=>`<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${b.table.rows.map(r=>`<tr>${r.map(c=>`<td class="l">${esc(c)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`:'')+
+    (b.sign?`<p style="margin-top:28px">${esc(b.sign[0])}</p><p style="margin-top:34px;border-top:1px solid var(--ink);display:inline-block;padding-top:4px"><b>${esc(b.sign[1])}</b><br>${esc(b.sign[2])}</p>`:'')).join('');
+}
+function memoText(B){
+  const out=['MEMORIAL DESCRITIVO DE INSTALAÇÕES ELÉTRICAS',''];
+  B.forEach((b,i)=>{
+    out.push(`${i+1}. ${b.h.toUpperCase()}`);
+    if(b.kv)b.kv.forEach(([k,v])=>out.push(`${k}: ${v||'—'}`));
+    (b.p||[]).forEach(x=>out.push(x));
+    if(b.ul)b.ul.forEach(x=>out.push('- '+x));
+    if(b.table){out.push(b.table.head.join(' | '));b.table.rows.forEach(r=>out.push(r.join(' | ')))}
+    if(b.sign){out.push('');out.push(b.sign[0]);out.push('');out.push('______________________________');out.push(b.sign[1]);out.push(b.sign[2])}
+    out.push('');
+  });
+  return out.join('\n');
+}
+function paintMemorial(){$('#memo').innerHTML=memoHTML(buildMemorial())}
+
+/* ---------- interação ---------- */
+function toast(t){const e=$('#toast');e.textContent=t;e.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>e.hidden=true,2200)}
+async function copyText(t){
+  try{await navigator.clipboard.writeText(t);toast('Copiado');return}catch(e){}
+  try{const a=document.createElement('textarea');a.value=t;a.style.position='fixed';a.style.opacity='0';document.body.appendChild(a);a.select();const ok=document.execCommand('copy');a.remove();toast(ok?'Copiado':'Não foi possível copiar')}catch(e){toast('Não foi possível copiar')}
+}
+async function saveFile(name,data){
+  if(!DL){toast('Salvar arquivo não está disponível aqui');return}
+  try{await DL.save({filename:name,data});toast('Arquivo salvo')}catch(e){if(e&&e.code!=='declined')toast('Não foi possível salvar')}
+}
+function val(t){return t.type==='checkbox'?t.checked:t.type==='number'?(t.value===''?'':+t.value):t.value}
+function paint(){D=compute(S);paintHeader();paintOutputs()}
+function after(){paint();scheduleSave()}
+document.addEventListener('input',e=>{
+  const t=e.target; const ds=t.dataset; if(!ds)return;
+  if(ds.p){S.p[ds.p]=val(t);if(ds.p==='obra')EXEMPLO=false;if(ds.p==='sistema'||ds.p==='forn')renderCirc();after();return}
+  if(ds.t){S.terra[ds.t]=val(t);after();return}
+  if(ds.chk){S.chk[ds.chk]=t.checked;scheduleSave();return}
+  if(ds.l){
+    const row=S[ds.l].find(r=>String(r.id)===ds.id); if(!row)return;
+    row[ds.f]=val(t); if(ds.l==='circ'||ds.l==='amb'||ds.l==='luz')EXEMPLO=EXEMPLO;
+    if(ds.l==='circ'){row.auto=false;
+      if(ds.f==='tipo'){const tp=TIPOS[row.tipo];row.fp=tp.fp;row.dr=tp.dr;const card=t.closest('article');
+        card.querySelector('[data-f="fp"]').value=tp.fp;card.querySelector('[data-f="dr"]').checked=tp.dr}}
+    if(ds.l==='luz'&&ds.f==='ativ'){const a=ATIV.find(x=>x[0]===row.ativ);if(a&&!/Outro/.test(a[0])){row.E=a[1];t.closest('article').querySelector('[data-f="E"]').value=a[1]}}
+    after();
+  }
+});
+document.addEventListener('click',async e=>{
+  const b=e.target.closest('[data-act]'); if(!b)return; const a=b.dataset.act;
+  if(a==='del'){S[b.dataset.l]=S[b.dataset.l].filter(r=>String(r.id)!==b.dataset.id);
+    ({amb:renderAmb,circ:renderCirc,luz:renderLuz,orc:renderOrc})[b.dataset.l](); after(); return}
+  if(a==='add-amb'){S.amb.push({id:nid(),nome:'Novo ambiente',tipo:'sala',area:10,perim:13});renderAmb();after()}
+  else if(a==='gen-circ'){genCircuits();renderCirc();regenOrc();renderOrc();after();toast('Circuitos gerados');setTab('circuitos')}
+  else if(a==='add-circ'){S.circ.push(newCirc($('#add-tipo').value));renderCirc();after()}
+  else if(a==='add-luz'){S.luz.push(newLuz());renderLuz();after()}
+  else if(a==='regen-orc'){regenOrc();renderOrc();after();toast('Materiais atualizados')}
+  else if(a.startsWith('add-item-')){const cat={m:'Materiais',o:'Mão de obra',t:'Taxas'}[a.slice(9)];S.orc.push({id:nid(),auto:false,key:'',cat,desc:'Novo item',un:'un',qtd:1,pu:0});renderOrc();after()}
+  else if(a==='exemplo'){seed();renderAll();after();toast('Exemplo carregado')}
+  else if(a==='novo'){S=blank();EXEMPLO=false;renderAll();after();toast('Projeto em branco')}
+  else if(a==='backup')saveFile('bancada-eletrica-backup.json',JSON.stringify({S,EXEMPLO}));
+  else if(a==='copiar-backup')copyText(JSON.stringify({S,EXEMPLO}));
+  else if(a==='restaurar'){try{adopt($('#restore').value);renderAll();after();$('#restore').value='';toast('Backup restaurado')}catch(err){toast('Texto de backup inválido')}}
+  else if(a==='copiar-memorial')copyText(memoText(buildMemorial()));
+  else if(a==='salvar-memorial')saveFile(`memorial-${(S.p.obra||'obra').toLowerCase().replace(/[^a-z0-9]+/g,'-')}.txt`,memoText(buildMemorial()));
+});
+function setTab(n){ if(location.hash!=='#'+n)location.hash=n; else showTab(n) }
+function showTab(n){
+  if(!$('#p-'+n))n='projeto'; active=n;
+  $$('.panel[id^="p-"]').forEach(p=>p.hidden=p.id!=='p-'+n);
+  $$('#tabs button').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===n));
+  const bt=$(`#tabs button[data-tab="${n}"]`); if(bt&&bt.scrollIntoView)bt.scrollIntoView({block:'nearest',inline:'center'});
+  if(D){paintOutputs()}
+  window.scrollTo(0,0);
+}
+$('#tabs').addEventListener('click',e=>{const b=e.target.closest('button');if(b)setTab(b.dataset.tab)});
+window.addEventListener('hashchange',()=>showTab(location.hash.slice(1)));
+
+seed(); D=compute(S); renderAll(); showTab(location.hash.slice(1)||'projeto'); setBadge('carregando…');
+boot().then(()=>{showTab(active)});
+</script>
